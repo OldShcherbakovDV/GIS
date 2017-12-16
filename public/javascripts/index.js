@@ -176,13 +176,50 @@ class View {
     }
 }
 
-window.gis = new View(window.innerWidth, window.innerHeight);
+const gis = new View(window.innerWidth, window.innerHeight);
 d3.json('api/get-all', function(error, input) {
     if (error) throw error;
-    window.gis.update(input);
+    gis.update(input);
 });
-
-
+const controls = d3.select('.controls');
+const search = d3.select('#search-line');
+const path = {
+    from: d3.select('#path-line-from'),
+    to: d3.select('#path-line-to'),
+    type: d3.select('input[name="type-path"]')
+}
+let isSearch = true;
+d3.select('.change').on('click', () => {
+    controls.classed('path', isSearch);
+    isSearch = !isSearch;
+});
+d3.select('#find-object').on('click', () => {
+    let data = search.node().value.split(',');
+    trimArray(data);
+    if (data.length === 0) {
+        alert('Заполнитк строку поиска!');
+    } else if (data.length > 2) {
+        alert('Не верный формат ввода');
+    } else {
+        gis.findObject(data[0], data[1]);
+    }
+    console.log(data)
+});
+d3.select('#find-path').on('click', () => {
+    let from = path.from.node().value.split(',');
+    let to = path.to.node().value.split(',');
+    trimArray(from);
+    trimArray(to);
+    if (from.length === 0) {
+        alert('Не указано начало пути');
+    } else if (to.length === 0) {
+        alert('Не указан конец пути');
+    } else if (from.length > 2 || to.length > 2) {
+        alert('Не верный формат ввода');
+    } else {
+        gis.findPath(from[0], from[1], to[0], to[1]);
+    }
+});
 
 function lol() {
     var svg = d3.select("svg"),
@@ -238,7 +275,11 @@ function lol() {
     });
 }
 
-
+function trimArray(data) {
+    for (let i in data) {
+        data[i] = data[i].trim();
+    }
+}
 function dragstarted(d) {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;

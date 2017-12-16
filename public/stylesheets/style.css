@@ -1,5 +1,5 @@
 .body {
-  position: absolute;
+  position: fixed;
   left: 0;
   top: 0;
   right: 0;
@@ -7,6 +7,117 @@
   background: #c3e186;
 }
 
+.controls {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+}
+
+.controls .search-wrap {
+  max-height: 300px;
+  width: 400px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 8px;
+  /*height: 48px;*/
+  border-radius: 2px;
+  box-shadow: 0 5px 17px -3px rgba(0,0,0,.3);
+  color: #fff;
+  font: 12px/14px Helvetica,Arial,sans-serif;
+  opacity: 1;
+  -webkit-transition: opacity .3s ease-out;
+  transition: opacity .3s ease-out;
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  border-radius: 3px;
+  background: rgba(48,48,48,.9);
+}
+.controls .search-wrap .logo {
+  font-size: 24px;
+  line-height: 48px;
+  padding: 0 10px;
+}
+.controls .search-wrap .inputs {
+  display: flex;
+}
+.controls .search-wrap .path {
+  display: none;
+}
+
+.controls .search-wrap .search {
+  padding: 8px 0;
+}
+.controls.path .search-wrap .path {
+  display: flex;
+  padding: 8px;
+  padding-left: 0;
+}
+.controls.path .search-wrap .search {
+  display: none;
+}
+.controls .search-wrap input{
+  text-align: left;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 5px 0 3px 12px;
+  width: 100%;
+  height: 32px;
+  outline: none;
+  border: 0;
+  border-radius: 2px;
+  background: 0 0;
+  box-shadow: 0 2px 6px 0 rgba(0,0,0,.15) inset;
+  white-space: nowrap;
+  font: 14px/24px Helvetica,Arial,sans-serif;
+  background: #fff;
+}
+.controls.path .search-wrap input{
+  margin-bottom: 8px;
+}
+.controls .search-wrap button.find{
+  right: 12px;
+  z-index: 0;
+  width: 48px;
+  background-color: #00a8d5;
+  box-shadow: 0 -2px 0 rgba(0,0,0,.1) inset;
+  vertical-align: bottom;
+  text-align: center;
+  cursor: pointer;
+  height: 32px;
+  border: 0;
+  border-radius: 2px;
+  margin-left: 4px;
+  margin-right: 8px;
+  color: white;
+}
+.change {
+  padding: 0 4px;
+}
+.change button {
+  border: 0;
+  width: 56px;
+  height: 48px;
+  color: white;
+  text-decoration: none;
+  border-radius: 3px;
+  background: rgba(48,48,48,.9);
+  cursor: pointer;
+}
+
+.controls .change button.path {
+  display: none;
+}
+.controls.path .change button.path {
+  display: block;
+}
+.controls.path .change button.search {
+  display: none;
+}
 svg {
   width: 100%;
   height: 100%;
@@ -33,4 +144,43 @@ svg {
 .roadNodes circle {
   stroke: #fff;
   stroke-width: 1.5px;
+}
+.flex-row {
+  width: 100%;
+  display: flex;
+}
+.flex-column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+input[type=radio] {
+  position: absolute;
+  visibility: hidden;
+  display: none;
+}
+
+label {
+  color: white;
+  display: inline-block;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 5px 20px;
+}
+
+input[type=radio]:checked + label {
+  color: white;
+  background: #00a8d5;
+}
+
+label + input[type=radio] + label {
+  border-left: solid 3px #00a8d5;
+}
+
+.radio-group {
+  border: solid 2px #00a8d5;
+  display: inline-block;
+  border-radius: 4px;
+  overflow: hidden;
 }

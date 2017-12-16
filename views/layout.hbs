@@ -6,8 +6,34 @@
   </head>
   <body>
     <div style="display: none">{{body}}</div>
+
     <div class="body">
         <svg width="960" height="600"></svg>
+    </div>
+    <div class="controls flex-row">
+        <div class="search-wrap flex-row">
+            <span class="logo">GIS</span>
+            <div class="inputs search flex-row">
+                <input id='search-line' type="text" class="search-query" placeholder="Название улици или остановки">
+                <button id="find-object" class="find">Найти</button>
+            </div>
+            <div class="inputs path flex-column">
+                <input id='path-line-from' type="text" class="search-query" placeholder="Откуда">
+                <input id='path-line-to' type="text" class="search-query" placeholder="Куда">
+                <div class="flex-row">
+                    <div class="radio-group">
+                        <input type="radio" id="option-one" name="type-path"><label for="option-one" value="0">Пешком</label><input type="radio" id="option-two" name="type-path" value="1"><label for="option-two">На машине</label><input type="radio" id="option-three" name="type-path" value="2"><label for="option-three">На транспорте</label>
+                    </div>
+                </div>
+                <div class="flex-row" style="justify-content: flex-end; padding-top: 8px;">
+                    <button id="find-path" class="find" style="margin-right: 0;">Найти</button>
+                </div>
+            </div>
+        </div>
+        <div class="change">
+            <button class="search">Проезд</button>
+            <button class="path">Поиск</button>
+        </div>
     </div>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="/javascripts/index.js"></script>
