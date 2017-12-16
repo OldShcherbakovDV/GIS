@@ -74,6 +74,7 @@ class View {
         this.data = data;
         this.updateRoads(selected ? (this.data.selectedRoads ? this.data.selectedRoads: []): this.data.roads, subclass);
         this.updateBuildings(selected ? (this.data.selectedBuildings ? this.data.selectedBuildings: []) :this.data.buildings, subclass);
+        // this.updateStations(data.stations)
     }
 
     updateRoads(roads, subclass = '') {
@@ -159,6 +160,23 @@ class View {
             .attr("y1", (road) => this.getElementById(road.start).geoPoint.longitude)
             .attr("x2", (road) => this.getElementById(road.end).geoPoint.latitude)
             .attr("y2", (road) => this.getElementById(road.end).geoPoint.longitude);
+    }
+
+    updateStations(stations) {
+        this.body.append("g")
+            .attr("class", "station-text")
+            .selectAll("text")
+            .data(stations)
+            .enter()
+            .append("text")
+            .text(function(building){
+                return building.name;
+            })
+            .attr("x", function(building) { return building.geoPoint.latitude; })
+            .attr("y", function(building) { return building.geoPoint.longitude; })
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "12px")
+            .attr("fill", "red");
     }
 
     findObject(street, building) {

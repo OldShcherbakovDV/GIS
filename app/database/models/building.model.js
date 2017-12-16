@@ -12,8 +12,8 @@ export class Building {
         return `
             MATCH (gp:GeoPoint)
             WHERE ID(gp) = $geoPointId
-            CREATE (rn:Building {number: $number})-[:Include]->(gp)
-            RETURN ID(rn)
+            CREATE (b:Building {number: $number})-[:Include]->(gp)
+            RETURN ID(b)
         `;
     }
 }

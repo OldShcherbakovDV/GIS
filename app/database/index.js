@@ -1,4 +1,6 @@
 import {Building} from "./models/building.model";
+import {Station} from "./models/station.model";
+import {Route} from "./models/route.model";
 
 const config = require('./config');
 const neo4j  = require('neo4j-driver').v1;
@@ -21,6 +23,8 @@ export class DataBase {
         this._roadNode = new RoadNode(session);
         this._building = new Building(session);
         this._street = new Street(session);
+        this._route = new Route(session);
+        this._station = new Station(session);
     }
 
     createNewStreet(name) {
@@ -74,6 +78,28 @@ export class DataBase {
         });
     }
 
+    createStation(roadNodeId, name) {
+        return this._station.create(roadNodeId, name).then( res => {
+            return res.records[0].get(res.records[0].keys[0])
+        });
+    }
+
+    getStationByRoadNodeId(roadNodeId) {
+        return this._station.getByRoadNodeId(roadNodeId);
+    }
+
+    createRoute(name) {
+        return this._route.create(name).then( res => {
+            return res.records[0].get(res.records[0].keys[0])
+        });
+    }
+
+    addNodeToRoute(routeID, nodeID) {
+
+        return this._route.addNode(routeID, nodeID);
+    }
+
+
     getPath(s1, b1, s2, b2) {
         const request = `
             MATCH (s1:Street)--(:RoadNode)--(n1:Building) WHERE s1.name = $s1 AND n1.number = $b1
@@ -90,6 +116,26 @@ export class DataBase {
         }).then(res => {
             return res.records[0].get(res.records[0].keys[0]);
         }, err => {
+            console.log (err)
+        })
+    }
+
+    getPathById(from, to) {
+        const request = `
+            MATCH p = shortestPath((from)-[r:Road*]-(to))  
+            WHERE ID(from) = $from AND ID(to) = $to
+            WITH p, [x IN nodes(p) | x {id:ID(x), .*}] as n
+            RETURN n
+        `
+        return session.run(request, {
+            from: from,
+            to: to
+        }).then(res => {
+            if (res.records.length) {
+                return res.records[0].get(res.records[0].keys[0]);
+            }
+            return [];
+        }, err => {
             console.log(err)
         })
     }
@@ -100,6 +146,10 @@ export class DataBase {
             const requestRoad = `
                 MATCH (rn1)-[r:Road]-(rn2)
                 RETURN collect(r {id: ID(r), start: ID(rn1), end: ID(rn2)})
+            `;
+            const requestStation = `
+                MATCH (s:Station)--(rn:RoadNode)--(gp:GeoPoint)
+                RETURN collect(s {id: ID(s), .*, geoPoint: gp {id: ID(gp), .*}})
             `;
             const requestRoadNode = `
                 MATCH (rn:RoadNode)--(gp:GeoPoint)
@@ -132,13 +182,16 @@ export class DataBase {
                     result.buildings = res.records[0].get(res.records[0].keys[0]);
                     return true;
                 }),
+                session.run(requestStation).then(res => {
+                      result.stations = res.records[0].get(res.records[0].keys[0]);
+                      return true;
+                }),
             ]
             if (street !== undefined && building != undefined) {
                 p.push(session.run(buildingSelected, {
                     name: street,
                     number: building
                 }).then(res => {
-                    console.log(res.records, building)
                     result.selectedBuildings = res.records[0].get(res.records[0].keys[0]);
                     return true;
                 }))
@@ -170,6 +223,7 @@ export class Generator {
     ) {
         this.db = db;
         this.cross = {};
+        this.stations = [];
         this.db.clear().then(() => {
             this.run(countStreet, maxStreetLenght, onEnd);
         })
@@ -183,7 +237,7 @@ export class Generator {
         const p = [];
         this.isHorisontal = false;
         for (let i = 0; i < countStreet; i++) {
-            const streetLenght = getRandomInt(10, maxStreetLenght);
+            const streetLenght = getRandomInt(30, maxStreetLenght);
             let fixedPosition;
             if (this.isHorisontal) {
                 fixedPosition = startLatitude;
@@ -198,7 +252,7 @@ export class Generator {
         Promise.all(p)
             .then(() => {
                 const p2 = [];
-                console.log(JSON.stringify(this.cross))
+                console.log('Генерируем перекрестки')
                 for (let i in this.cross) {
                     for (let j in this.cross[i]) {
                         if (this.cross[j] != undefined && this.cross[j][i] != undefined) {
@@ -207,10 +261,69 @@ export class Generator {
                         }
                     }
                 }
-                Promise.all(p).then(() => {
-                    onEnd();
+
+                Promise.all(p2).then(() => {
+                    console.log('Генерируем транспортную карту', this.stations.length)
+                    const p3 = [];
+                    let counter = 1;
+                    while (this.stations.length) {
+
+                        let from = 0;
+                        let to = getRandomInt(1, this.stations.length);
+
+                        p3.push(this.createNewRoute(this.stations[from], this.stations[to], 'Route '+ counter));
+                        counter += 1;
+                        this.stations.splice(0, 1);
+                    }
+                    Promise.all(p3).then(() => {
+                        onEnd();
+                    }, err => {
+                        console.log(err)
+                    });
                 });
             })
+    }
+    createStation(nodeID) {
+        return this.db.getStationByRoadNodeId(nodeID).then(stationID => {
+            if (stationID === undefined) {
+                return this.db.createStation(nodeID, 'Station ' + nodeID.toString())
+            } else {
+                return stationID
+            }
+        });
+    }
+    createNewRoute(from, to, name) {
+        return new Promise((s, f) => {
+            if (from && to) {
+
+                this.db.getPathById(from, to).then(nodes => {
+                    if (nodes && nodes.length) {
+                        this.db.createRoute(name).then(routeID => {
+                            const p = [];
+                            let counter = 0;
+                            for (let i = 0; i < nodes.length; i++) {
+                                p.push(this.db.addNodeToRoute(routeID, nodes[i].id));
+                                if (!counter || true) {
+                                    p.push(this.createStation(nodes[i].id));
+                                }
+                                counter = counter > 2 ? 0 : counter + 1;
+                            }
+                            // if (counter) {
+                            //     p.push(this.createStation(nodes.length - 1));
+                            // }
+                            Promise.all(p).then(s, f)
+                        })
+                    } else {
+                        s()
+                    }
+                });
+            } else {
+                s();
+            }
+        });
+    }
+    getStationName() {
+
     }
     createNewStreet(streetName, streetLenght, isHorisontal, startPosition, N) {
         this.cross[N] = {};
@@ -235,6 +348,9 @@ export class Generator {
                                 this.db
                                     .createRoadNode(longitude, latitude)
                                     .then(roadNodeID => {
+                                        if (getRandomBool()) {
+                                            this.stations.push(roadNodeID)
+                                        }
                                         this.db.addToStreet(streetID, roadNodeID);
                                         if (crosCounter) {
                                             const buildingLatitudeP = isHorisontal ? latitude + 15 : latitude;
@@ -286,4 +402,7 @@ function getRandomInt(min, max) {
 }
 function getRoadLenght(gps_longitude, gps_latitude, gpe_longitude, gpe_latitude) {
     return Math.sqrt(Math.pow(gpe_latitude - gps_latitude,2) + Math.pow(gpe_longitude - gps_longitude,2));
+}
+function getRandomBool() {
+    return getRandomInt(0, 2);
 }
